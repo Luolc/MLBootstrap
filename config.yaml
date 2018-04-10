@@ -1,6 +1,9 @@
 dataset:
   - path: 'data/raw'
-    id: 'sample'
+    task: 'sample'
+
+cache:
+  path: 'data/cache'
 
 hyperparameter:
   batch_size:
@@ -8,4 +11,4 @@ hyperparameter:
     opt: 'b'
 
 train:
-  task: 'naive'
+  task: 'sample'

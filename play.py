@@ -1,9 +1,6 @@
 import yaml
-from preprocessor import BasePreprocessor
+from mlbootstrap.preprocess import AbstractPreprocessor
+from mlbootstrap import Bootstrap
 
-
-with open('config.yaml', 'r') as stream:
-    try:
-        print(yaml.load(stream))
-    except yaml.YAMLError as ex:
-        print(ex)
+bootstrap = Bootstrap('config.yaml')
+bootstrap.fetch()
