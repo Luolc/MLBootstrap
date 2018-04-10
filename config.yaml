@@ -1,0 +1,11 @@
+dataset:
+  - path: 'data/raw'
+    id: 'sample'
+
+hyperparameter:
+  batch_size:
+    value: 32
+    opt: 'b'
+
+train:
+  task: 'naive'
