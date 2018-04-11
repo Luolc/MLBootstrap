@@ -1,6 +1,5 @@
-import yaml
-from mlbootstrap.preprocess import AbstractPreprocessor
+from process import DataPreprocessor
 from mlbootstrap import Bootstrap
 
-bootstrap = Bootstrap('config.yaml')
-bootstrap.fetch()
+bootstrap = Bootstrap('config.yaml', preprocessor=DataPreprocessor())
+bootstrap.preprocess(force=True)

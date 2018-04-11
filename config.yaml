@@ -1,5 +1,5 @@
 dataset:
-  - path: 'data/raw'
+  - path: 'data/sample'
     task: 'sample'
 
 cache:

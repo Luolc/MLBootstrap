@@ -20,6 +20,8 @@ class Bootstrap:
         self.__fetcher.check()
 
     def preprocess(self, force=False):
+        self.fetch()
+
         self.__preprocessor.set_config(self.config)
         if (not self.__preprocessor.finished()) or force:
             self.__preprocessor.process()

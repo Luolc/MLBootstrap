@@ -1,5 +1,5 @@
-import os
 from ..base import MlbtsBaseModule
+from ..util.config import dataset_tree_as_list
 from pathlib import Path
 
 
@@ -11,16 +11,8 @@ class AbstractFetcher(MlbtsBaseModule):
         raise NotImplementedError
 
     def check(self):
-        def __check_node(node, path):
-            path = os.path.join(path, node['path'])
-            if 'task' in node:
-                self._check_dataset(path)
-            if 'sub' in node:
-                for _i in node['sub']:
-                    __check_node(_i, path)
-
-        for i in self._config['dataset']:
-            __check_node(i, '')
+        for node in dataset_tree_as_list(self._config):
+            self._check_dataset(node['src'])
 
     def _check_dataset(self, path):
         raise NotImplementedError
