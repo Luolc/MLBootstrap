@@ -5,12 +5,16 @@ from pathlib import Path
 
 
 class AbstractPreprocessor(MlbtsBaseModule):
+    def set_config(self, config):
+        super().set_config(config)
+        self._datasets = list(dataset_tree_as_list(self._config))
+
     def finished(self):
         return False
 
     def process(self):
         self._on_start()
-        for node in dataset_tree_as_list(self._config):
+        for node in self._datasets:
             self._on_next(node['src'], node['dst'], node['task'])
         self._on_complete()
 
@@ -34,7 +38,7 @@ class AbstractPreprocessor(MlbtsBaseModule):
         raise NotImplementedError
 
     def check(self):
-        for node in dataset_tree_as_list(self._config):
+        for node in self._datasets:
             self._check_cache(node['task'])
 
     def _check_cache(self, task):
@@ -43,7 +47,7 @@ class AbstractPreprocessor(MlbtsBaseModule):
 
 class BasicPreprocessor(AbstractPreprocessor):
     def finished(self):
-        for node in dataset_tree_as_list(self._config):
+        for node in self._datasets:
             if not Path(node['dst']).is_dir():
                 return False
         return True

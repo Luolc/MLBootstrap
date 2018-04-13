@@ -27,3 +27,7 @@ class Bootstrap:
             self.__preprocessor.process()
         self.__preprocessor.load_cache()
         self.__preprocessor.check()
+
+    # tmp
+    def dataset(self):
+        return self.__preprocessor.dataset
