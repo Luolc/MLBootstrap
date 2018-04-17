@@ -156,7 +156,6 @@ Temporary Items
 .idea/**/tasks.xml
 .idea/dictionaries
 .idea/misc.xml
-.idea/**/*.iml
 
 # Sensitive or high-churn files:
 .idea/**/dataSources/
