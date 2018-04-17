@@ -1,5 +1,4 @@
-from ..base import MlbtsBaseModule
-from ..util.config import dataset_tree_as_list
+from mlbootstrap.base import MlbtsBaseModule
 from pathlib import Path
 
 
@@ -11,7 +10,7 @@ class AbstractFetcher(MlbtsBaseModule):
         raise NotImplementedError
 
     def check(self):
-        for node in dataset_tree_as_list(self._config):
+        for node in self._datasets:
             self._check_dataset(node['src'])
 
     def _check_dataset(self, path):
@@ -20,6 +19,9 @@ class AbstractFetcher(MlbtsBaseModule):
 
 class BasicFetcher(AbstractFetcher):
     def finished(self):
+        for node in self._datasets:
+            if not Path(node['src']).is_dir():
+                return False
         return True
 
     def fetch(self):

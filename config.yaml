@@ -2,8 +2,8 @@ dataset:
   - path: 'data/sample'
     task: 'sample'
 
-cache:
-  path: 'data/cache'
+processed:
+  path: 'data/processed'
 
 hyperparameter:
   batch_size:
