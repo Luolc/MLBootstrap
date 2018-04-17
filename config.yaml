@@ -1,9 +1,11 @@
 dataset:
-  - path: 'data/sample'
-    task: 'sample'
+  - path: 'data/source/naive'
+    task: 'naive'
 
 processed:
   path: 'data/processed'
+  vocab:
+    min_frequency: 5
 
 hyperparameter:
   batch_size:
@@ -11,4 +13,4 @@ hyperparameter:
     opt: 'b'
 
 train:
-  task: 'sample'
+  task: 'naive'
