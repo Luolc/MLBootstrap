@@ -19,13 +19,21 @@ def _parse_insight(fp):
     with open(fp, 'r') as f:
         result = json.load(f)
         for item in result:
+            assert len(item['sub']) >= 2
+            assert item['sub'][0][1] == 0
             item['title'] = ' '.join(
-                w.lower() for w in item['title'] if w and w not in _STOP_WORDS)
+                w.lower() for w in item['title'] if w and w not in _STOP_WORDS and '\n' not in w)
+            item['sub'] = item['sub'][0][0]
+            item['sub'] = item['sub'].replace('\n', '').replace('\r', '')
         return [item for item in result if item['title']]
 
 
 def _parse_table(fp):
-    return pd.read_csv(fp).as_matrix()
+    table = pd.read_csv(fp)
+    assert len(table.columns) >= 4
+    return dict(
+        (r[0].replace('\n', '').replace('\r', ''), r[1:4].tolist()) for r in table.as_matrix() if
+        type(r[0]) == str)
 
 
 class DataPreprocessor(BasicPreprocessor):
@@ -35,6 +43,7 @@ class DataPreprocessor(BasicPreprocessor):
         os.makedirs(dst, exist_ok=True)
 
         raw_data = {}
+        i = 0
         for filename in os.listdir(os.path.join(src, _TABLE_INSIGHT_DIR)):
             file_path = os.path.join(src, _TABLE_INSIGHT_DIR + '/' + filename)
             table_id = filename.replace('.txt', '').replace('.csv', '')
@@ -44,6 +53,10 @@ class DataPreprocessor(BasicPreprocessor):
                 raw_data[table_id]['insights'] = _parse_insight(file_path)
             if filename.endswith('.csv'):
                 raw_data[table_id]['table'] = _parse_table(file_path)
+
+            i += 1
+            if i % 2000 == 0:
+                print('loaded {} insights'.format(i // 2))
 
         table_insight_dir = os.path.join(dst, _TABLE_INSIGHT_DIR)
         os.makedirs(table_insight_dir, exist_ok=True)
@@ -60,16 +73,34 @@ class DataPreprocessor(BasicPreprocessor):
             if ('insights' not in v) or len(v['insights']) < 5:
                 del raw_data[k]
                 continue
+            if any(i['type'] not in _TYPE2ID for i in v['insights']):  # n/a ???
+                del raw_data[k]
+                continue
+            if any(i['sub'] == 'n/a' for i in v['insights']):  # n/a ???
+                del raw_data[k]
+                continue
+            if any(i['sig'] == 'n/a' for i in v['insights']):  # n/a ???
+                del raw_data[k]
+                continue
+            if any(i['title'] == 'n/a' for i in v['insights']):  # n/a ???
+                del raw_data[k]
+                continue
+            if any(i['prob'] == 'n/a' for i in v['insights']):  # n/a ???
+                del raw_data[k]
+                continue
 
             samples = pd.DataFrame()
             insights = v['insights']
+            table = v['table']
             titles = [i['title'] for i in insights]
-            max_doc_length = max((len(t.split()) for t in titles))
+            max_doc_length = max(max_doc_length, max((len(t.split()) for t in titles)))
             samples['title'] = titles
             samples['significant'] = [i['sig'] for i in insights]
             samples['type'] = [_TYPE2ID[i['type']] for i in insights]
+            samples['cells'] = [table[i['sub']] for i in insights]
+            samples['index'] = [idx for idx, _ in enumerate(insights)]
             samples['target'] = [i['prob'] for i in insights]
-            samples = samples.sample(frac=1).reset_index(drop=True)  # random shuffle
+            # samples = samples.sample(frac=1).reset_index(drop=True)  # random shuffle
             samples.to_csv(out_path)
 
         # process vocabulary
@@ -116,6 +147,8 @@ class DataPreprocessor(BasicPreprocessor):
                     'title': np.array(list(vocab_processor.transform(samples['title']))),
                     'significant': np.array(samples['significant']),
                     'type': np.array(samples['type']),
+                    'cells': np.array([json.loads(s) for s in samples['cells']]),
+                    'index': np.array(samples['index']),
                     'target': np.array(samples['target']),
                     'batch_size': len(samples),
                 }
@@ -125,7 +158,7 @@ class DataPreprocessor(BasicPreprocessor):
         result['train'] = __get_batches(meta_data['train'])
         result['val'] = __get_batches(meta_data['val'])
         result['test'] = __get_batches(meta_data['test'])
-        result['max_doc_length'] = meta_data['max_doc_length']
+        result['max_doc_length'] = max(20, meta_data['max_doc_length'])
         result['vocab_size'] = meta_data['vocab_size']
 
         return result

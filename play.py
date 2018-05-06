@@ -7,28 +7,60 @@ bootstrap = Bootstrap(
     preprocessor=DataPreprocessor())
 bootstrap.preprocess(force=False)
 
-# data = bootstrap.dataset()
-# max_doc_length = data['max_doc_length']
-# embedding_size = 300
+data = bootstrap.dataset()
+max_doc_length = data['max_doc_length']
+embedding_size = 64
+max_idx = 100
 
-# with tf.name_scope('input'):
-#     title = tf.placeholder(tf.int32, [None, max_doc_length], name='title')
-#     significant = tf.placeholder(tf.float32, [None], name='significant')
-#     target = tf.placeholder(tf.float32, [None], name='target')
-#
-#
-# def weighted_variable(shape, name=None):
-#     initializer = tf.random_uniform_initializer(-0.1, 0.1)
-#     return tf.Variable(initializer(shape), name=name)
-#
-#
-# def bias_variable(shape):
-#     return tf.Variable(tf.constant(.0, shape=shape))
-#
-#
-# with tf.name_scope('title'):
-#     W = weighted_variable([data['vocab'], embedding_size])
-#     title_emb = tf.reduce_sum(tf.nn.embedding_lookup(W, title), axis=1)
+with tf.name_scope('input'):
+    title = tf.placeholder(tf.int32, [None, max_doc_length], name='title')
+    significant = tf.placeholder(tf.float32, [None], name='significant')
+    insight_type = tf.placeholder(tf.int32, [None], name='insight_type')
+    cells = tf.placeholder(tf.float32, [None, 3], name='cells')
+    index = tf.placeholder(tf.int32, [None], name='index')
+    target = tf.placeholder(tf.float32, [None], name='target')
+
+
+def weighted_variable(shape, name=None):
+    initializer = tf.random_uniform_initializer(-0.1, 0.1)
+    return tf.Variable(initializer(shape), name=name)
+
+
+def bias_variable(shape):
+    return tf.Variable(tf.constant(.0, shape=shape))
+
+
+with tf.name_scope('title'):
+    W_w = weighted_variable([data['vocab_size'], embedding_size])
+    title_emb = tf.reduce_sum(tf.nn.embedding_lookup(W_w, title), axis=1)
+
+with tf.name_scope('type'):
+    W_type = weighted_variable(2, embedding_size)
+    type_emb = tf.nn.embedding_lookup(W_type, insight_type)
+
+with tf.name_scope('index'):
+    W_idx = weighted_variable(max_idx, embedding_size)
+    idx_emb = tf.nn.embedding_lookup(W_idx, index)
+
+with tf.name_scope('conv'):
+    kernel = weighted_variable(3, 16)
+    W_c = weighted_variable(16, embedding_size)
+    conv1 = cells @ kernel @ W_c
+
+with tf.name_scope('significant'):
+    W_s = weighted_variable([1, embedding_size])
+    b_s = bias_variable([embedding_size])
+    sig_den = tf.reshape(significant, [-1, 1]) @ W_s + b_s
+
+with tf.name_scope('mem'):
+    feature_den = title_emb + type_emb + idx_emb + conv1 + sig_den
+    attn = title_emb @ tf.transpose(title_emb)
+    attn_ex = tf.expand_dims(attn, axis=1)
+    feature_ex = tf.expand_dims(feature_den, axis=-1)
+    mem_output = tf.transpose(tf.reduce_sum(attn_ex * feature_ex, axis=0))
+
+with tf.name_scope
+
 #
 # with tf.name_scope('attention'):
 #     A = weighted_variable([1, embedding_size])
