@@ -113,8 +113,8 @@ for step in range(10000):
                 })
                 predict += pred
                 baseline += ba
-            predict /= len(data['train'])
-            baseline /= len(data['train'])
+            predict /= len(data[mode])
+            baseline /= len(data[mode])
             print('{} predict: {}'.format(mode, predict))
             print('{} baseline: {}'.format(mode, baseline))
 
