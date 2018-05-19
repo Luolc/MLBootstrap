@@ -1,18 +1,23 @@
 import yaml
-from mlbootstrap.fetch import BasicFetcher
-from mlbootstrap.preprocess import BasicPreprocessor
-from mlbootstrap.model import BasicModel
+from mlbootstrap.fetch import AbstractFetcher, BasicFetcher
+from mlbootstrap.preprocess import AbstractPreprocessor, BasicPreprocessor
+from mlbootstrap.model import AbstractModel
+from typing import Dict
 
 
 class Bootstrap:
-    def __init__(self, config_path, fetcher=BasicFetcher(), preprocessor=BasicPreprocessor(),
-                 model=BasicModel()):
+    def __init__(self,
+                 config_path: str,
+                 fetcher: AbstractFetcher = BasicFetcher(),
+                 preprocessor: AbstractPreprocessor = BasicPreprocessor(),
+                 models: Dict[str, AbstractModel] = None):
+        self.__load_config(config_path)
         self.__fetcher = fetcher
         self.__preprocessor = preprocessor
-        self.__model = model
-        self.__load_config(config_path)
+        model_name = self.config['model']['current']
+        self.__model = models[model_name]
 
-    def __load_config(self, config_path):
+    def __load_config(self, config_path: str):
         with open(config_path, 'r') as stream:
             self.config = yaml.load(stream)
 
@@ -22,7 +27,7 @@ class Bootstrap:
             self.__fetcher.fetch()
         self.__fetcher.check()
 
-    def preprocess(self, force=False):
+    def preprocess(self, force: bool = False):
         self.fetch()
 
         self.__preprocessor.set_config(self.config)
@@ -32,15 +37,17 @@ class Bootstrap:
         self.__preprocessor.check()
 
     def train(self):
-        self.preprocess()
+        self._init_model()
 
         self.__model.train()
 
     def evaluate(self):
-        self.preprocess()
+        self._init_model()
 
         self.__model.evaluate()
 
-    # tmp
-    def dataset(self):
-        return self.__preprocessor.dataset
+    def _init_model(self):
+        self.preprocess()
+        self.__model.set_config(self.config)
+        self.__model.set_visible_gpus()
+        self.__model.set_dataset(self.__preprocessor.dataset)

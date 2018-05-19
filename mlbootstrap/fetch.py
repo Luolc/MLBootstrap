@@ -10,23 +10,19 @@ class AbstractFetcher(MlbtsBaseModule):
         raise NotImplementedError
 
     def check(self):
-        for node in self._datasets:
-            self._check_dataset(node['src'])
+        self._check_dataset(self._get_dataset_node().src)
 
-    def _check_dataset(self, path):
+    def _check_dataset(self, path: str):
         raise NotImplementedError
 
 
 class BasicFetcher(AbstractFetcher):
-    def finished(self):
-        for node in self._datasets:
-            if not Path(node['src']).is_dir():
-                return False
-        return True
+    def finished(self) -> bool:
+        return Path(self._get_dataset_node().src).is_dir()
 
     def fetch(self):
         pass
 
-    def _check_dataset(self, path):
+    def _check_dataset(self, path: str):
         if not Path(path).is_dir():
             raise FileNotFoundError("Dataset '{}' does not exist".format(path))
